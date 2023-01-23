@@ -17,14 +17,47 @@
     }
   }
 </script>
+<script>
+let ori = {
+	alpha: 0,
+	beta: 0,
+	gamma: 0
+};
+function toRads(degs) {
+	return degs * (Math.PI/180);
+}
+
+function handleO(event) { //https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Orientation_and_motion_data_explained
+	const absolute = event.absolute;
+	const alpha = event.alpha; //Rotation around the z-axis (vertical), ie spinning	[0, 360) degrees. is 0 when top of dev pointed at north pole
+	const beta = event.beta; //Rotation around the x-axis, tipping away/towards user [-180, 180) degs. is 0 when top and bottom of dev are same distance from earth surface
+	const gamma = event.gamma; //rotation around y-axis, tilting to left or right. [-90, 90) degs. is 0 when left and right of dev are same distance from earth surface.
+
+	ori.alpha = toRads(alpha);
+	ori.beta = toRads(beta);
+	ori.gamma = toRads(gamma);
+}
+
+function handleM(event) {
+	//a = event.acceleration upon axes (compensating for gravity)
+	//ag = event.accelerationIncludingGravity = {x, y, z}
+	//a.x : acceleration upon west-east
+	//a.y : south-north
+	//a.z : verticality
+	//
+	//r = event.rotationRate upon axes {alpha, beta, gamma}
+}
+</script>
 <script type="module">
 import * as THREE from "three";
 import {GLTFLoader} from "gltf";
 
+window.addEventListener("deviceorientation", handleO, true);
+
+
 const mat = new THREE.MeshBasicMaterial({color: 0xff0000});
 
 const scene = new THREE.Scene();
-
 const loader = new GLTFLoader();
 loader.load("fart.glb", function(gltf) {
 	scene.add(gltf.scene);
@@ -48,6 +81,13 @@ camera.position.z = 5;
 
 function animate() {
 	requestAnimationFrame(animate);
+	
+	scene.traverse((child) => {
+		child.rotation.y = ori.gamma;
+		child.rotation.x = ori.beta;
+		child.rotation.z = ori.alpha;
+	});
+	
 	renderer.render(scene, camera);
 }
 animate();
